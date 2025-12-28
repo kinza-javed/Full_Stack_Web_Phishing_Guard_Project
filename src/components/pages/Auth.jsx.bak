@@ -1,0 +1,410 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
+import { LogIn, UserPlus, Moon, Sun, ArrowLeft } from 'lucide-react';
+
+const Auth = ({ onSkip = () => {}, onLogin = () => {} }) => {
+  const [mode, setMode] = useState('login');
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [showReset, setShowReset] = useState(false);
+  const [resetCode, setResetCode] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (mode === 'signup' && !formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+    
+    if (mode === 'signup' && formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    if (mode === 'signup') {
+      // Store user credentials
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const userExists = users.find(u => u.email === formData.email);
+      
+      if (userExists) {
+        setErrors({ email: 'Email already registered' });
+        return;
+      }
+      
+      users.push({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
+      
+      localStorage.setItem('users', JSON.stringify(users));
+      localStorage.setItem('currentUser', JSON.stringify({ name: formData.name, email: formData.email }));
+      onLogin(formData.name, formData.email);
+    } else {
+      // Login
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find(u => u.email === formData.email && u.password === formData.password);
+      
+      if (!user) {
+        setErrors({ email: 'Invalid email or password' });
+        return;
+      }
+      
+      localStorage.setItem('currentUser', JSON.stringify({ name: user.name, email: user.email }));
+      onLogin(user.name, user.email);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: '' });
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail || !validateEmail(resetEmail)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        if (!otpSent) {
+          setOtpSent(true);
+        }
+        
+        // Show toast notification
+        if (data.otp) {
+          showToast(`OTP sent: ${data.otp}`, 'success');
+          console.log('📧 Your OTP Code:', data.otp);
+        } else {
+          showToast('OTP sent to your email!', 'success');
+        }
+        
+        if (data.previewUrl) {
+          console.log('📧 Email Preview:', data.previewUrl);
+        }
+      } else {
+        showToast(data.error || 'Failed to send OTP', 'error');
+      }
+    } catch (error) {
+      console.error('OTP send error:', error);
+      showToast('Failed to send OTP. Please check your connection.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (resetCode.length !== 6) {
+      showToast('Please enter the 6-digit OTP', 'error');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail, otp: resetCode })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showToast('OTP verified successfully!', 'success');
+        setTimeout(() => {
+          setShowReset(false);
+          setResetCode('');
+          setResetEmail('');
+          setOtpSent(false);
+        }, 1000);
+        // Here you would typically show a password reset form
+      } else {
+        showToast(data.error || 'Invalid OTP', 'error');
+      }
+    } catch (error) {
+      console.error('OTP verify error:', error);
+      showToast('Failed to verify OTP', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen pt-24 pb-16 px-4">
+      <div className="max-w-5xl mx-auto grid lg:grid-cols-[1.2fr_1fr] gap-8 items-center">
+        {/* Form */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <Card className="shadow-glow-lg bg-white dark:bg-dark-card">
+            <CardContent className="p-8 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-indigo-500 dark:text-indigo-400 font-semibold">Phishing Guard</p>
+                  <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100">{mode === 'login' ? 'Welcome back' : 'Create account'}</h1>
+                  <p className="text-gray-600 dark:text-gray-400">Securely scan, report, and track links.</p>
+                </div>
+                <button
+                  onClick={() => setIsDark((v) => !v)}
+                  className="p-3 rounded-xl border border-dark-border bg-white dark:bg-dark-card hover:bg-gray-100 dark:hover:bg-dark-hover text-gray-700 dark:text-gray-200 transition-all"
+                  aria-label="Toggle theme"
+                >
+                  {isDark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
+                </button>
+              </div>
+
+              <div className="flex space-x-2 bg-white/90 dark:bg-dark-card/60 rounded-xl p-1 border border-dark-border">
+                <button
+                  onClick={() => setMode('login')}
+                  className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-all ${
+                    mode === 'login'
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-[0_10px_30px_rgba(99,102,241,0.35)]'
+                      : 'text-gray-400 hover:text-white hover:bg-dark-hover'
+                  }`}
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => setMode('signup')}
+                  className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-all ${
+                    mode === 'signup'
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-[0_10px_30px_rgba(99,102,241,0.35)]'
+                      : 'text-gray-400 hover:text-white hover:bg-dark-hover'
+                  }`}
+                >
+                  Signup
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {mode === 'signup' && (
+                  <div>
+                    <Input 
+                      type="text" 
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Full name" 
+                      className="h-12" 
+                    />
+                    {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
+                  </div>
+                )}
+                <div>
+                  <Input 
+                    type="email" 
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Email address" 
+                    className="h-12" 
+                  />
+                  {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
+                </div>
+                <div>
+                  <Input 
+                    type="password" 
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Password (min 8 characters)" 
+                    className="h-12" 
+                  />
+                  {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
+                </div>
+                {mode === 'signup' && (
+                  <div>
+                    <Input 
+                      type="password" 
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Confirm password" 
+                      className="h-12" 
+                    />
+                    {errors.confirmPassword && <p className="text-red-400 text-xs mt-1">{errors.confirmPassword}</p>}
+                  </div>
+                )}
+
+              <div className="flex items-center justify-between text-sm text-indigo-500 dark:text-indigo-300">
+                <button onClick={() => { setShowReset(true); }} className="hover:text-indigo-700 dark:hover:text-white">Forgot password?</button>
+                <button onClick={onSkip} className="flex items-center space-x-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Skip for now</span>
+                </button>
+              </div>
+
+              <Button type="submit" className="w-full h-12 text-lg">
+                {mode === 'login' ? (
+                  <>
+                    <LogIn className="w-5 h-5 mr-2" />
+                    Login
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-5 h-5 mr-2" />
+                    Create Account
+                  </>
+                )}
+              </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Sidebar info */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+        >
+          <Card className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 border-indigo-500/30 shadow-glow dark:from-indigo-500/15 dark:via-purple-500/10 dark:to-pink-500/15">
+            <CardContent className="p-8 space-y-5">
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Stay protected</h3>
+              <ul className="space-y-3 text-gray-700 dark:text-gray-300">
+                <li>• Real-time phishing and malware detection</li>
+                <li>• SSL, DNS, and WHOIS insights in one scan</li>
+                <li>• Save your scan history for quick recall</li>
+              </ul>
+              <div className="pt-2 text-sm text-gray-600 dark:text-gray-400">
+                Toggle light/dark anytime—your preference is saved.
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Reset modal */}
+      {showReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowReset(false)}></div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-md"
+          >
+            <div className="rounded-2xl bg-white/70 dark:bg-dark-card/80 border border-white/40 dark:border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-indigo-500 dark:text-indigo-300 font-semibold">Reset password</p>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Check your email</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Enter the 6-digit code we just sent you.</p>
+                </div>
+                <button
+                  onClick={() => setShowReset(false)}
+                  className="p-2 rounded-full bg-white/60 dark:bg-dark-hover text-gray-600 dark:text-gray-200 hover:bg-white dark:hover:bg-dark-border transition"
+                  aria-label="Close reset dialog"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <Input
+                type="text"
+                maxLength={6}
+                value={resetCode}
+                onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="Enter 6-digit code"
+                className="h-12 text-center tracking-[0.6em] text-lg"
+              />
+
+              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>Didn’t get the code?</span>
+                <button className="text-indigo-500 dark:text-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-200">Resend</button>
+              </div>
+
+              <Button className="w-full h-11 text-sm font-semibold" onClick={() => { alert('Code submitted'); setShowReset(false); setResetCode(''); }}>
+                Verify & Continue
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      {/* Toast Notification */}
+      {toast.show && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          className="fixed top-4 right-4 z-[100] max-w-md"
+        >
+          <div className={`px-6 py-4 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl border ${
+            toast.type === 'success'
+              ? 'bg-green-500/90 border-green-400/50 text-white'
+              : 'bg-red-500/90 border-red-400/50 text-white'
+          }`}>
+            <div className="flex items-center space-x-3">
+              {toast.type === 'success' ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              <p className="font-semibold">{toast.message}</p>
+            </div>
+          </div>
+        </motion.div>
+      )}    </div>
+  );
+};
+
+export default Auth;

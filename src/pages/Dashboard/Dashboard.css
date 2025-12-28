@@ -1,0 +1,84 @@
+.dash-wrapper {
+  padding: 40px 32px;
+  min-height: 100vh;
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dash-wrapper h1 {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.dash-wrapper .muted {
+  font-size: 16px;
+  color: var(--muted);
+  margin-bottom: 32px;
+  font-weight: 500;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  gap: 32px;
+  margin-top: 32px;
+}
+
+.dash-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  padding: 0;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-xl);
+  transition: all var(--transition-base);
+  overflow: hidden;
+  position: relative;
+}
+
+.dash-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.dash-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl), 0 0 48px rgba(99, 102, 241, 0.2);
+}
+
+.dash-card:hover::before {
+  opacity: 1;
+}
+
+@media (max-width: 1200px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .dash-wrapper {
+    padding: 24px 20px;
+  }
+  
+  .dash-wrapper h1 {
+    font-size: 28px;
+  }
+  
+  .dash-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

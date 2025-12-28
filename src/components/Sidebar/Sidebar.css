@@ -1,0 +1,304 @@
+/* Premium Sidebar with Glassmorphism */
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 80px;
+}
+
+/* Base styles */
+.sidebar {
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  backdrop-filter: blur(20px);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  transition: all var(--transition-base);
+  border-right: 1px solid rgba(148, 163, 184, 0.1);
+  box-shadow: var(--shadow-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Premium gradient overlay */
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sidebar > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Collapsed */
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed);
+  padding: 24px 12px;
+}
+
+/* Top area */
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  margin-bottom: 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--transition-base);
+}
+
+.logo:hover {
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+}
+
+.brand-text .brand-title {
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brand-text .brand-sub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(203, 213, 225, 0.7);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* collapse button */
+.collapse-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(203, 213, 225, 0.8);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.collapse-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  color: #ffffff;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* nav list */
+.nav-list {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  color: rgba(248, 250, 252, 0.9);
+  text-decoration: none;
+  transition: all var(--transition-base);
+  font-size: 14px;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0) 0%, rgba(139, 92, 246, 0) 100%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.nav-item .svg-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.nav-item .nav-label {
+  position: relative;
+  z-index: 1;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.nav-item:hover::before {
+  opacity: 1;
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.15) 100%);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #818cf8;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* icon only look when collapsed */
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px;
+}
+
+.sidebar.collapsed .nav-item .nav-label {
+  display: none;
+}
+
+/* nav label */
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* bottom actions */
+.sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+/* profile button */
+.profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: var(--radius-md);
+  padding: 10px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  backdrop-filter: blur(10px);
+}
+
+.profile-btn:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+}
+
+.profile-initials {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  color: #ffffff;
+}
+
+.profile-meta {
+  text-align: left;
+  font-size: 13px;
+  flex: 1;
+}
+
+.profile-name {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.profile-action {
+  font-size: 11px;
+  color: rgba(203, 213, 225, 0.7);
+  margin-top: 2px;
+}
+
+/* footer */
+.sidebar-footer {
+  padding-top: 12px;
+  text-align: center;
+  color: rgba(203, 213, 225, 0.5);
+  font-size: 11px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* small screens: make it overlay instead of narrow */
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    z-index: 60;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: translateX(0);
+    width: var(--sidebar-width);
+  }
+  
+  .sidebar.collapsed {
+    transform: translateX(-110%);
+  }
+}

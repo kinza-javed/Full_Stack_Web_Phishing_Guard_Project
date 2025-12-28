@@ -1,0 +1,59 @@
+/* Premium App Layout */
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 80px;
+}
+
+/* App root layout */
+.app-root {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+}
+
+/* main content area */
+.main-content {
+  flex: 1;
+  padding: 32px;
+  transition: all var(--transition-base);
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Animated gradient background for main content */
+.main-content::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(99, 102, 241, 0.08) 0%,
+    transparent 50%
+  );
+  animation: float 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.main-content > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* when sidebar collapsed we reduce margin */
+[data-sidebar-collapsed='true'] .main-content {
+  margin-left: var(--sidebar-collapsed);
+}
+
+/* small screens reduce margin */
+@media (max-width: 900px) {
+  .main-content {
+    margin-left: 0;
+    padding: 24px 16px;
+  }
+}
